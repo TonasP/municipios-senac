@@ -1,19 +1,46 @@
 const API = "http://127.0.0.1:3000/municipios";
 
+let idEdicao = null
+
+let lastScrollTop = 0
+
+let offset = 0
+
+
 const listagem = document.getElementById("listagem");
 const btnCarregar = document.getElementById("btn");
 const btnSalvar = document.getElementById("btnSalvar");
+const btnDeletar = document.getElementById("btn-delete")
+const btnAlterar = document.getElementById("btn-alterar")
+const btnPlus = document.getElementById("btn_plus")
+const btnMinus = document.getElementById("btn_minus")
 
 // Eventos
-btnCarregar.addEventListener("click", carregarMunicipios);
-btnSalvar.addEventListener("click", inserirMunicipio);
 
+
+btnCarregar.addEventListener("click", async => { offset = 0 })
+btnCarregar.addEventListener("click", carregarMunicipios);
+
+btnSalvar.addEventListener("click", decidirSalvar);
+btnPlus.addEventListener("click", () => mudarPagina(1))
+btnMinus.addEventListener("click", () => mudarPagina(-1))
+
+window.addEventListener("scroll", async () => {
+    let scrollTop = window.pageYOffset 
+    console.log("scrolleeeiiiiii");
+    if (scrollTop > lastScrollTop) { mudarPagina(1) }
+    else {
+        mudarPagina(-1)
+    }
+    lastScrollTop = lastScrollTop
+}
+);
 //--------------------------------------------------
 // LISTAR MUNICÍPIOS
 //--------------------------------------------------
 async function carregarMunicipios() {
     try {
-        const resposta = await fetch(API);
+        const resposta = await fetch(`${API}?limit=3&offset=${offset}`);
         const dados = await resposta.json();
 
         listagem.innerHTML = ""; // limpa
@@ -22,6 +49,29 @@ async function carregarMunicipios() {
 
     } catch (erro) {
         console.error("Erro ao carregar:", erro.message);
+    }
+}
+async function mudarPagina(direcao) {
+    let itensPorPagina = 3
+    try {
+        if (direcao === 1) {
+            offset += itensPorPagina
+            carregarMunicipios()
+        }
+        if (direcao === -1) {
+            if (offset > 0) {
+                offset -= itensPorPagina
+                carregarMunicipios()
+            }
+            else {
+                alert("Não é possivel retornar a página")
+                return
+            }
+        }
+
+    }
+    catch (erro) {
+        console.error("Erro ao paginar", erro.message)
     }
 }
 
@@ -35,7 +85,8 @@ function criarCard(m) {
     card.innerHTML = `
         <h3>${m.nome} (${m.estado})</h3>
         <p>${m.caracteristica}</p>
-        <button class="btn-delete" onclick="deletar()">Deletar</button>
+        <button class="btn-delete" onclick="deletar(${m.id})">Deletar</button>
+        <button class= "btn-alterar" onclick="preencherFormulario('${m.id}', '${m.nome}', '${m.estado}', '${m.caracteristica}')">Alterar</button>
     `;
 
     listagem.appendChild(card);
@@ -49,6 +100,7 @@ async function inserirMunicipio() {
     const estado = document.getElementById("campoUF").value;
     const caracteristica = document.getElementById("campoCaracteristica").value;
 
+
     const novoMunicipio = { nome, estado, caracteristica };
 
     try {
@@ -61,14 +113,74 @@ async function inserirMunicipio() {
         if (!resposta.ok) {
             throw new Error("Erro ao inserir!");
         }
-
+        limparFormulario()
         carregarMunicipios();
 
     } catch (erro) {
         console.error("Erro ao inserir:", erro.message);
     }
 }
+async function alterarMunicipio() {
+    const nome = document.getElementById("campoMunicipio").value;
+    const estado = document.getElementById("campoUF").value;
+    const caracteristica = document.getElementById("campoCaracteristica").value;
 
-async function deletar(){
-    alert("vou deletar");
+    const novosDados = { nome, estado, caracteristica }
+    try {
+        const resposta = await fetch(`${API}/${idEdicao}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(novosDados)
+        })
+        if (!resposta.ok) {
+            throw new Error("Erro ao alterar!");
+        }
+        limparFormulario()
+        carregarMunicipios();
+
+    }
+    catch (erro) {
+        console.error("Erro ao alterar", erro.message)
+    }
+}
+function preencherFormulario(id, nome, estado, caracteristica) {
+    document.getElementById("campoMunicipio").value = nome;
+    document.getElementById("campoUF").value = estado;
+    document.getElementById("campoCaracteristica").value = caracteristica;
+
+    idEdicao = id;
+
+    btnSalvar.textContent = "Atualizar";
+}
+function limparFormulario() {
+    document.getElementById("campoMunicipio").value = "";
+    document.getElementById("campoUF").value = "";
+    document.getElementById("campoCaracteristica").value = "";
+
+    idEdicao = null;
+
+    btnSalvar.textContent = "Salvar";
+}
+
+
+async function decidirSalvar() {
+    if (idEdicao === null) {
+        await inserirMunicipio();
+    } else {
+        await alterarMunicipio();
+    }
+}
+async function deletar(id) {
+    try {
+        const resposta = await fetch(`${API}/${id}`, {
+            method: "DELETE"
+        });
+        if (!resposta.ok) {
+            throw new Error("Erro ao deletar!");
+        }
+        carregarMunicipios();
+
+    } catch (erro) {
+        console.error("Erro ao deletar:", erro.message);
+    }
 }
