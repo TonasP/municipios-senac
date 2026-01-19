@@ -5,15 +5,14 @@ const cors = require('cors');
 
 const municipiosRouter = require("./routes/municipios");
 
+const autenticarAPIKey = require("./autorizar");
+
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-// =====================
-// Rotas principais
-// =====================
-app.use("/municipios", municipiosRouter);
+app.use(autenticarAPIKey)
+app.use("/municipios",  municipiosRouter);
 
 // Rota raiz
 app.get("/", (req, res) => {
@@ -25,7 +24,21 @@ app.get("/", (req, res) => {
 // =====================
 const PORT = process.env.PORT || 3000;
 
+const pool = require("./db");
 
-app.listen(PORT, "127.0.0.1", () => {
-  console.log("✅ Servidor rodando em http://127.0.0.1:3000");
+
+app.listen(PORT,  () => {
+  console.log("✅ Servidor rodando ");
 });
+
+
+(async () => {
+  try {
+    await pool.query("SELECT 1");
+    console.log("✅ Conexão com Supabase OK");
+  } catch (err) {
+    console.error("❌ ERRO AO CONECTAR NO SUPABASE");
+    console.error("Mensagem:", err.message);
+    console.error("Código:", err.code);
+  }
+})();

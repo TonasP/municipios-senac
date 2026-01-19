@@ -1,5 +1,7 @@
 const API = "http://127.0.0.1:3000/municipios";
 
+const CLIENT_API_KEY = "SUA_CHAVE_SECRETA_MUITO_FORTE_123456"
+
 let idEdicao = null
 
 let lastScrollTop = 0
@@ -25,23 +27,39 @@ btnSalvar.addEventListener("click", decidirSalvar);
 btnPlus.addEventListener("click", () => mudarPagina(1))
 btnMinus.addEventListener("click", () => mudarPagina(-1))
 
-window.addEventListener("scroll", async () => {
-    let scrollTop = window.pageYOffset 
-    console.log("scrolleeeiiiiii");
-    if (scrollTop > lastScrollTop) { mudarPagina(1) }
-    else {
-        mudarPagina(-1)
+window.addEventListener("scroll", () => {
+    const top = window.scrollY;
+    const alturaPagina = document.documentElement.scrollHeight;
+    const alturaJanela = window.innerHeight;
+    console.log("alturaPagina ", alturaPagina)
+    console.log("alturaJanela ", alturaPagina)
+    console.log( (top + alturaJanela >= alturaPagina - 5))
+
+    // Scroll para baixo → carregar mais
+    if (top + alturaJanela >= alturaPagina - 5) {
+        console.log("⬇ Rolou para BAIXO");
+        mudarPagina(1);
     }
-    lastScrollTop = lastScrollTop
-}
-);
+
+    // Scroll topo → voltar
+    if (top <= 0) {
+        console.log("⬆ Rolou para CIMA");
+        mudarPagina(-1);
+    }
+});
 //--------------------------------------------------
 // LISTAR MUNICÍPIOS
 //--------------------------------------------------
 async function carregarMunicipios() {
     try {
-        const resposta = await fetch(`${API}?limit=3&offset=${offset}`);
+        const url = `${API}?limit=3&offset=${offset}`
+        const resposta = await fetch(url,{
+            headers:{
+                'minha-chave': CLIENT_API_KEY
+            }
+        });
         const dados = await resposta.json();
+
 
         listagem.innerHTML = ""; // limpa
 
