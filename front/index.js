@@ -1,4 +1,5 @@
-const API = "http://127.0.0.1:3000/municipios";
+//const API = "http://127.0.0.1:3000/municipios";
+const API = "https://municipios-senac-dzky.onrender.com/municipios";
 
 const CLIENT_API_KEY = "SUA_CHAVE_SECRETA_MUITO_FORTE_123456"
 
